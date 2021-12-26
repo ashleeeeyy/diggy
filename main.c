@@ -87,9 +87,6 @@ int main() {
     server_address.sin_addr.s_addr = inet_addr("198.41.0.4");
     server_address.sin_port = htons(53); //short but in network form!
 
-    //prepare our message to get shipped
-    char queryDomain[11] = {'s', 't', 'a', 't', 'u', 't' , 'o' , ',', 'o', 'r', 'g'};
-
     char *buffer; //big buffer cuz we might need it idk
     int buffersize = 16;
     buffer = calloc(1, buffersize);
@@ -101,7 +98,7 @@ int main() {
 
     buffer_write_char_array((char *) &header, sizeof header, buffer, &writehead, &buffersize);
 
-    char name[] = "a.statuto.org.";
+    char name[] = "statuto.org.";
     buffer_write_dns_name(name, buffer, &writehead, &buffersize);
 
     struct dns_question_footer questionFooter;
@@ -117,8 +114,6 @@ int main() {
                           &writehead,
                           &buffersize);
 
-
-    debug_output_buffer(buffer, writehead);
 
 
     if (sendto(socky, buffer, writehead, 0, // +1 to include terminator
