@@ -1,0 +1,3 @@
+[submodule "lib/buffer_utils"]
+	path = lib/buffer_utils
+	url = https://github.com/ashleeeeyy/buffer_utils.git

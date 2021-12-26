@@ -12,7 +12,7 @@
 #include <sys/uio.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
-#include "buffer_utils/bytebuf.h"
+#include "lib/buffer_utils/bytebuf.h"
 
 struct dns_header {
     //first int, the ID
