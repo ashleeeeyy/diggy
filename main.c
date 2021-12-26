@@ -39,6 +39,36 @@ struct dns_question_footer {
     u_int16_t qclass;
 };
 
+int dns_name_split(char *src, const char delim){
+    //  result which is the amount of times we split the str
+    int times_split = 0;
+
+    char *start = src;
+    while(*src != '\0'){
+        if(*src == delim){
+            *src = '\0';
+            times_split++;
+        }
+        ++src;
+    }
+
+    src = start;
+
+    return times_split;
+
+}
+
+int buffer_write_dns_name(char *name, char buffer[], int *writehead, int *buffersize){
+    char *input_domain_ptr = name;
+
+    int ts = dns_name_split(input_domain_ptr, '.');
+
+    for (int i = 0; i < ts+1; ++i){
+        int pre_writehead = *writehead;
+        buffer_write_string(input_domain_ptr, buffer, writehead, buffersize);
+        input_domain_ptr += *writehead-pre_writehead;
+    }
+}
 
 int main() {
     int writehead = 0;
@@ -60,30 +90,36 @@ int main() {
     //prepare our message to get shipped
     char queryDomain[11] = {'s', 't', 'a', 't', 'u', 't' , 'o' , ',', 'o', 'r', 'g'};
 
-    char buffer[400]; //big buffer cuz we might need it idk
-    memset(&buffer, 0, sizeof buffer);
+    char *buffer; //big buffer cuz we might need it idk
+    int buffersize = 16;
+    buffer = calloc(1, buffersize);
 
     struct dns_header header;
     memset(&header, 0, sizeof header);
     header.id = htons(1337);
     header.qdcount = htons(1);
 
-    buffer_write_char_array((char *) &header, sizeof header, buffer, &writehead);
+    buffer_write_char_array((char *) &header, sizeof header, buffer, &writehead, &buffersize);
 
-    buffer_write_string("statuto", buffer, &writehead);
-    buffer_write_string("org", buffer, &writehead);
-    buffer_write_u_int_8(0x00, buffer, &writehead);
+    char name[] = "a.statuto.org.";
+    buffer_write_dns_name(name, buffer, &writehead, &buffersize);
 
     struct dns_question_footer questionFooter;
-    memset(&questionFooter, 0, sizeof questionFooter);
     questionFooter.qclass = htons(1);
     questionFooter.qtype = htons(1);
 
-    buffer_write_u_int_16(questionFooter.qclass, buffer, &writehead);
-    buffer_write_u_int_16(questionFooter.qtype, buffer, &writehead);
+    buffer_write_u_int_16(questionFooter.qclass,
+                          buffer,
+                          &writehead,
+                          &buffersize);
+    buffer_write_u_int_16(questionFooter.qtype,
+                          buffer,
+                          &writehead,
+                          &buffersize);
 
 
     debug_output_buffer(buffer, writehead);
+
 
     if (sendto(socky, buffer, writehead, 0, // +1 to include terminator
                (struct sockaddr*)&server_address, sizeof(server_address)) < 0){
